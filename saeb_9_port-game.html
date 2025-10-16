@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trilha do Saber SAEB 2025 - 9º Ano</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f4f8; /* Fundo azul claro e suave */
+        }
+        .board-square {
+            transition: transform 0.2s ease-in-out;
+        }
+        .board-square:hover {
+            transform: scale(1.05);
+        }
+        .player-pawn {
+            transition: all 0.5s ease-in-out;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            position: absolute;
+            z-index: 10;
+            transform: translate(-50%, -50%);
+        }
+        #player1-pawn {
+            background-color: #3b82f6; /* Azul */
+            box-shadow: 0 0 10px #3b82f6;
+        }
+        #player2-pawn {
+            background-color: #ef4444; /* Vermelho */
+            box-shadow: 0 0 10px #ef4444;
+        }
+        .start-square, .end-square {
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .start-square {
+            background-color: #22c55e; /* Verde */
+            color: white;
+        }
+        .end-square {
+            background-color: #f59e0b; /* Amarelo */
+            color: white;
+        }
+        .dice-animation {
+            animation: roll 0.5s ease-in-out;
+        }
+        @keyframes roll {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.2); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        /* Animação de Confete */
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            opacity: 0;
+            animation: drop 5s linear forwards;
+        }
+        @keyframes drop {
+            0% { transform: translateY(-100px) rotateZ(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotateZ(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <!-- Tela do Jogo (inicialmente escondida) -->
+    <div id="game-container" class="w-full max-w-5xl mx-auto hidden">
+        <header class="text-center mb-6">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800">Trilha do Saber SAEB 2025</h1>
+            <p class="text-lg text-gray-600 mt-2">Língua Portuguesa - 9º Ano</p>
+        </header>
+
+        <main class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="md:col-span-2 bg-white p-4 rounded-xl shadow-lg">
+                <div id="game-board" class="grid grid-cols-6 gap-2 relative">
+                    <div id="pawns-container" class="absolute top-0 left-0 w-full h-full pointer-events-none">
+                        <div id="player1-pawn" class="player-pawn">P1</div>
+                        <div id="player2-pawn" class="player-pawn">P2</div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-lg flex flex-col justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold mb-4 text-gray-700">Painel do Jogo</h2>
+                    <div id="game-status" class="mb-4 p-3 bg-blue-100 text-blue-800 rounded-lg text-center font-semibold"></div>
+                    <div id="dice-container" class="text-center mb-4">
+                        <p class="mb-2 text-gray-600">Clique no dado para jogar:</p>
+                        <button id="dice" class="text-6xl p-4 rounded-full bg-white shadow-md hover:shadow-xl transition-shadow duration-300">🎲</button>
+                        <p id="dice-result" class="text-xl font-bold mt-2 h-8"></p>
+                    </div>
+                </div>
+                <div class="text-center">
+                     <button id="reset-button" class="w-full bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors duration-300">
+                        Reiniciar Jogo
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Nomes (aparece primeiro) -->
+    <div id="name-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Quem vai jogar?</h2>
+            <div class="space-y-4 mb-8">
+                <input type="text" id="player1-name" placeholder="Nome do Jogador 1" class="w-full p-3 border-2 border-gray-300 rounded-lg text-lg focus:border-blue-500 focus:ring-blue-500">
+                <input type="text" id="player2-name" placeholder="Nome do Jogador 2" class="w-full p-3 border-2 border-gray-300 rounded-lg text-lg focus:border-blue-500 focus:ring-blue-500">
+            </div>
+            <button id="start-game-button" class="w-full bg-green-500 text-white font-bold py-3 px-8 rounded-lg text-xl hover:bg-green-600 transition-colors duration-300">
+                Começar a Jogar!
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal de Perguntas -->
+    <div id="question-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full transform transition-all scale-95 opacity-0" id="modal-content">
+            <p class="text-sm font-semibold text-blue-600 mb-2" id="question-descriptor"></p>
+            <div class="bg-gray-100 p-4 rounded-lg mb-4 max-h-40 overflow-y-auto">
+                 <p class="text-gray-700 whitespace-pre-wrap" id="question-text"></p>
+            </div>
+            <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+             <div id="feedback" class="mt-4 text-center font-bold h-6"></div>
+        </div>
+    </div>
+    
+    <!-- Modal de Vencedor -->
+    <div id="winner-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50 overflow-hidden">
+        <div id="confetti-container" class="absolute inset-0"></div>
+        <div class="bg-white rounded-2xl shadow-2xl p-8 text-center transform transition-all scale-95 opacity-0 relative" id="winner-content">
+            <h2 class="text-5xl font-bold text-yellow-500 mb-4">Parabéns!</h2>
+            <p id="winner-message" class="text-3xl text-gray-700 mb-8"></p>
+            <button id="play-again-button" class="bg-green-500 text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-green-600 transition-colors duration-300">
+                Jogar Novamente
+            </button>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const TOTAL_SQUARES = 30;
+            const players = [
+                { id: 1, name: "", position: 0, pawnElement: document.getElementById('player1-pawn') },
+                { id: 2, name: "", position: 0, pawnElement: document.getElementById('player2-pawn') }
+            ];
+            let currentPlayerIndex = 0;
+            let isAnswering = false;
+
+            const gameContainer = document.getElementById('game-container');
+            const nameModal = document.getElementById('name-modal');
+            const startGameButton = document.getElementById('start-game-button');
+            const gameBoard = document.getElementById('game-board');
+            const diceButton = document.getElementById('dice');
+            const diceResult = document.getElementById('dice-result');
+            const gameStatus = document.getElementById('game-status');
+            const questionModal = document.getElementById('question-modal');
+            const modalContent = document.getElementById('modal-content');
+            const winnerModal = document.getElementById('winner-modal');
+            const winnerContent = document.getElementById('winner-content');
+            const resetButton = document.getElementById('reset-button');
+            const playAgainButton = document.getElementById('play-again-button');
+            const confettiContainer = document.getElementById('confetti-container');
+
+            const questions = [
+                // Perguntas com textos completos
+                { 
+                    descriptor: "D18 - O Bicho (Manuel Bandeira)", 
+                    text: `Leia o poema:\n\nO Bicho\nVi ontem um bicho\nNa imundície do pátio\nCatando comida entre os detritos.\nQuando achou alguma coisa,\nNão examinou nem cheirou:\nEngoliu com voracidade.\nO bicho não era um cão,\nNão era um gato,\nNão era um rato.\nO bicho, meu Deus, era um homem.\n\nNo poema, o impacto causado pelos versos finais deve-se principalmente à:`, 
+                    options: ["Revelação da compaixão do poeta por animais.", "Denúncia das condições precárias dos animais.", "Crítica à miséria que reduz o homem à condição de animal.", "Comparação técnica entre comportamentos."], 
+                    correct: 2 
+                },
+                { 
+                    descriptor: "D4 - Medo da eternidade (Clarice Lispector)", 
+                    text: `Leia o trecho do conto:\n\n"Jamais esquecerei o meu aflitivo e dramático contato com a eternidade. (...) Afinal minha irmã juntou dinheiro, comprou e ao sairmos de casa para a escola me explicou: Tome cuidado para não perder, porque esta bala nunca se acaba. Dura a vida toda."\n\nA partir da leitura, é correto afirmar que a narradora:`, 
+                    options: ["Adorou a experiência com o chiclete e ficou triste por perdê-lo.", "Sentiu-se angustiada com a ideia da eternidade representada pelo chiclete.", "Descobriu que o chiclete era raro e o guardou para sempre.", "Compartilhou com a irmã seu desagrado pelo sabor."], 
+                    correct: 1 
+                },
+                { 
+                    descriptor: "D16 - A Pipa e a Flor", 
+                    text: `Leia o texto:\n\n"Era uma vez uma pipa que bailava no ar com o seu bailado pomposo e majestoso. (...) Lá de baixo, a flor gritou-lhe: - Olá! Como você é bonita! (...) A pipa, orgulhosa, respondeu: (...) - Se me admiras tanto, porque não sobes até junto de mim? (...) A flor, com toda a mágoa, respondeu: - Não posso! O meu caule é muito curto e as minhas raízes estão presas à terra. (...) A pipa, com o seu ar de superioridade, disse: - Coitadinha! Presa a essa terra... Nunca saberás o que é a liberdade..."\n\nNo texto, a pipa, por se sentir livre e poderosa no céu, passou a:`, 
+                    options: ["Agradecer à flor por sua amizade.", "Voltar para perto da flor todos os dias.", "Ignorar e desprezar a flor que a amava.", "Pedir que a flor subisse ao céu com ela."], 
+                    correct: 2 
+                },
+                { 
+                    descriptor: "D11 - A Galinha e os Ovos de Ouro", 
+                    text: `Leia a fábula:\n\n"Um camponês e sua esposa possuíam uma galinha que punha todo dia um ovo de ouro. Supondo que devia haver uma grande quantidade de ouro em seu interior, eles a mataram para que pudessem pegar tudo. Então, para surpresa deles, viram que a galinha em nada era diferente das outras galinhas. O casal de tolos, desse modo, desejando ficar rico de uma só vez, perdeu o ganho diário que tinha assegurado."\n\nO camponês e sua esposa foram chamados de tolos porque:`, 
+                    options: ["Venderam a galinha dos ovos de ouro.", "Perderam o sustento que haviam garantido.", "Acharam que a galinha era igual às outras.", "Mataram a galinha que botava ovos de ouro."], 
+                    correct: 1 
+                },
+                { 
+                    descriptor: "D8 - Carros Elétricos", 
+                    text: `Leia o trecho:\n\n"O presidente da Fiat Chrysler, Sérgio Marchionne, afirmou que os carros elétricos não são a solução para reduzir as emissões de gases com efeito de estufa e o aquecimento global. 'A ideia de que os carros elétricos salvarão o planeta é um disparate', sublinhou. 'A eletricidade não vem do ar, é preciso gerá-la.' Ele explicou que, se a eletricidade for produzida a partir de combustíveis fósseis, 'o carro elétrico não terá qualquer utilidade'."\n\nQual argumento é utilizado por Sérgio Marchionne para defender sua opinião?`, 
+                    options: ["Apelo emocional sobre a poluição.", "Argumento de autoridade e de fatos sobre a geração de energia.", "Analogia com outros meios de transporte.", "Senso comum sobre o preço dos carros."], 
+                    correct: 1 
+                },
+                 { 
+                    descriptor: "D1 - O que é o bullying?", 
+                    text: `Leia o texto:\n\n"Bullying é uma palavra inglesa que significa usar o poder ou a força para intimidar, excluir, humilhar os outros. É uma forma de violência que ocorre de forma intencional e repetitiva contra uma ou mais pessoas. As agressões podem ser de ordem física, verbal ou psicológica, e acontecem, na maioria das vezes, no ambiente escolar."\n\nDe acordo com o texto, as agressões do bullying se manifestam de que formas?`, 
+                    options: ["Apenas como apelidos maldosos.", "Somente através de boatos.", "De forma física, verbal ou psicológica.", "Exclusivamente no ambiente online."], 
+                    correct: 2 
+                },
+                { 
+                    descriptor: "D9 - Fato vs Opinião (Bullying)", 
+                    text: `Leia o texto:\n\n"Bullying é uma palavra inglesa que significa usar o poder ou a força para intimidar, excluir, humilhar os outros. (...) É um problema que afeta crianças e jovens em todo o mundo e, por isso, merece mais atenção de pais, educadores e da sociedade em geral."\n\nQual trecho do texto expressa uma opinião?`, 
+                    options: ["Bullying é uma forma de violência.", "Agressões podem ser físicas ou verbais.", "Merece mais atenção de pais, educadores e da sociedade.", "A palavra 'bullying' tem origem inglesa."], 
+                    correct: 2 
+                },
+                // Perguntas genéricas ou com descrição de imagem
+                { descriptor: "D19 - Linguagem verbal e não verbal", text: `[IMAGEM: Charge com um homem sentado e outro em pé, com um livro aberto na cabeça.] Homem sentado: "Como vai a leitura?"\n\nNa charge, a combinação da pergunta com a imagem do homem-livro cria um efeito de:`, options: ["Tristeza", "Humor", "Confusão", "Raiva"], correct: 1 },
+                { descriptor: "D5 - Interpretação de texto com linguagem mista", text: `[IMAGEM: Peixe com máscara de gás, nadando em água poluída, diz: "Ainda bem que o ser humano é um ser racional."] A fala do peixe revela:`, options: ["Admiração pela inteligência humana.", "Deboche pela atitude contraditória do ser humano.", "Preocupação com a falta de oxigênio na água.", "Esperança de que os humanos resolvam a poluição."], correct: 1 },
+                { descriptor: "D19 - Linguagem mista", text: `[IMAGEM: Placa de trânsito com um 'E' cortado por uma faixa vermelha.]\n\nEssa placa, sem nenhuma palavra, comunica a mensagem de:`, options: ["Estacione aqui.", "Proibido estacionar.", "Entrada livre.", "Escola próxima."], correct: 1 },
+                { descriptor: "D6 - Identificar tema", text: `Um texto que narra a história da invenção do telefone e sua evolução até os smartphones atuais tem como tema:`, options: ["A biografia de Graham Bell.", "A história dos meios de comunicação.", "Os perigos da tecnologia.", "As regras de etiqueta ao celular."], correct: 1 },
+                { descriptor: "D12 - Finalidade de um texto", text: `Um manual de instruções de um videogame tem como principal finalidade:`, options: ["Vender o produto.", "Divertir o leitor.", "Criticar o jogo.", "Ensinar a jogar."], correct: 3 },
+                { descriptor: "D4 - Inferir informação", text: `Se um personagem diz "O dia está amanhecendo e eu não dormi nada!", infere-se que ele provavelmente passou a noite:`, options: ["Dormindo profundamente.", "Preocupado ou em alguma atividade.", "Viajando para longe.", "Lendo um livro chato."], correct: 1 },
+                { descriptor: "D15 - Coesão", text: `Na frase "Ele estudou muito, *portanto*, foi aprovado.", a palavra destacada introduz uma:`, options: ["Oposição", "Causa", "Condição", "Conclusão"], correct: 3 },
+                { descriptor: "D17 - Efeito de sentido", text: `Na frase "A notícia caiu como uma *bomba*", a palavra destacada tem o sentido de algo:`, options: ["Explosivo e perigoso.", "Inesperado e chocante.", "Barulhento e irritante.", "Valioso e raro."], correct: 1 },
+                { descriptor: "D21 - Relações lógico-discursivas", text: `Em "Ele não virá à festa, *a menos que* termine o trabalho.", a expressão destacada estabelece uma relação de:`, options: ["Finalidade", "Condição", "Consequência", "Proporção"], correct: 1 },
+                { descriptor: "D9 - Fato vs. Opinião", text: `Qual das frases abaixo representa um FATO?`, options: ["O filme foi incrivelmente chato.", "Acredito que todos deveriam ler este livro.", "O Brasil é um país localizado na América do Sul.", "Essa é a melhor música do ano."], correct: 2 },
+                { descriptor: "D20 - Pontuação", text: `O uso das aspas em "Ele disse que estava 'bem'" pode indicar:`, options: ["Certeza absoluta.", "Uma citação direta.", "Ironia ou que a pessoa não está bem de verdade.", "Um erro de gramática."], correct: 2 },
+                // Mais 22 perguntas para totalizar 40
+                { descriptor: "D1 - Localizar informações explícitas", text: `Leia o trecho da notícia:\n\n"A pequena cidade de Monte Verde, em Minas Gerais, foi eleita o destino mais acolhedor do mundo em 2024..."\n\nQual cidade foi eleita o destino mais acolhedor?`, options: ["Serra Negra", "Campos do Jordão", "Monte Verde", "Gramado"], correct: 2 },
+                { descriptor: "D3 - Inferir o sentido de uma palavra", text: `Na frase: "O atleta, com uma performance estelar, pulverizou o recorde anterior."\n\nA palavra "pulverizou" tem o sentido de:`, options: ["Destruiu em pedaços", "Superou com vantagem", "Limpou com cuidado", "Esqueceu completamente"], correct: 1 },
+                { descriptor: "D4 - Inferir informação implícita", text: `[IMAGEM: Menino olha brócolis com nojo. Depois, sorri e o cachorro lambe os beiços.]\nMãe: "Comeu tudo? Que orgulho!"\n\nO que provavelmente aconteceu?`, options: ["O menino adorou brócolis.", "O cachorro comeu o brócolis.", "A mãe cozinhou mais.", "O menino comeu a ração."], correct: 1 },
+                { descriptor: "D6 - Identificar o tema", text: `Um texto sobre desmatamento, gases de efeito estufa e derretimento de calotas polares tem como tema principal:`, options: ["Economia desenvolvida", "Vida selvagem", "Mudanças climáticas", "Reciclagem de lixo"], correct: 2 },
+                { descriptor: "D12 - Identificar a finalidade", text: `Uma receita de "Bolo de Cenoura" com ingredientes e modo de preparo tem qual finalidade principal?`, options: ["Contar uma história", "Anunciar um produto", "Instruir como fazer algo", "Criticar um prato"], correct: 2 },
+                { descriptor: "D15 - Reconhecer coesão", text: `Na frase: "O estudante leu o livro, *mas* não entendeu a história.", a palavra destacada estabelece uma relação de:`, options: ["Adição", "Conclusão", "Explicação", "Oposição"], correct: 3 },
+                { descriptor: "D17 - Efeito de sentido de palavra", text: `Compare as frases:\n1. "Ele mora em um *casebre*."\n2. "Ele mora em uma *mansão*."\nAs palavras "casebre" e "mansão" indicam, respectivamente:`, options: ["Modernidade e antiguidade", "Pobreza e riqueza", "Tamanho grande e pequeno", "Beleza e feiura"], correct: 1 },
+                { descriptor: "D18 - Efeito de sentido (morfossintaxe)", text: `Qual o efeito de sentido do diminutivo na frase: "Que *jeitinho* complicado ele tem!"?`, options: ["Carinho", "Ironia", "Tamanho pequeno", "Admiração"], correct: 1 },
+                { descriptor: "D14 - Medo da eternidade", text: `No conto "Medo da Eternidade", na frase "Perder a eternidade? Nunca.", o ponto de interrogação revela:`, options: ["Dúvida genuína", "Questionamento retórico de determinação", "Pergunta para a irmã", "Incerteza sobre a duração"], correct: 1 },
+                { descriptor: "D6 - Campanha contra a Dengue", text: `[IMAGEM: Campanha com vaso, pneu, garrafa e o texto "NÃO DEIXE ÁUA PARADA..."]\n\nO principal objetivo da campanha é:`, options: ["Informar tipos de criadouros", "Conscientizar sobre reciclagem", "Incentivar o cultivo de plantas", "Orientar sobre prevenção da dengue"], correct: 3 },
+                { descriptor: "D3 - Campanha contra a Dengue", text: `Na frase da campanha: "Um simples gesto pode salvar vidas.", sugere-se que:`, options: ["Qualquer um pode ser herói", "Ações pequenas têm grande impacto", "Só profissionais de saúde são responsáveis", "O governo precisa investir mais"], correct: 1 },
+                 { 
+                    descriptor: "D13 - Comparar textos", 
+                    text: `Ao comparar os textos "A Pipa e a Flor" e "O Bicho", pode-se afirmar que:`, 
+                    options: ["Ambos são fábulas com animais falantes.", "Ambos criticam problemas sociais.", "O primeiro fala de sentimentos, e o segundo de miséria.", "Os dois textos usam uma linguagem formal."], 
+                    correct: 2 
+                },
+                { 
+                    descriptor: "D14 - Relação entre partes de um texto", 
+                    text: `Na fábula "O leão e o rato", o leão não comeu o rato porque:`, 
+                    options: ["Sentiu pena da fragilidade do rato.", "O rato prometeu pagar sua dívida um dia.", "Achou que o rato era insignificante para uma refeição.", "Não estava com fome naquele momento."], 
+                    correct: 2 
+                },
+                { 
+                    descriptor: "D11 - Relação de causa e consequência", 
+                    text: `Qual foi a consequência do leão ter poupado a vida do rato na fábula "O Leão e o Rato"?`, 
+                    options: ["O rato se tornou o rei da floresta.", "O leão foi capturado por caçadores.", "O rato salvou o leão de uma armadilha.", "Os outros animais passaram a temer o rato."], 
+                    correct: 2 
+                },
+                { 
+                    descriptor: "D20 - Efeito de sentido (pontuação)", 
+                    text: `No trecho "Ah, o amor...", o uso das reticências (...) sugere:`, 
+                    options: ["Uma interrupção brusca da fala.", "Uma continuação do pensamento, um suspiro.", "Uma dúvida sobre o que é o amor.", "Um erro de digitação no texto."], 
+                    correct: 1 
+                },
+                { 
+                    descriptor: "D10 - Variação linguística", 
+                    text: `A expressão "E aí, mano, beleza?" é um exemplo de qual tipo de variação linguística?`, 
+                    options: ["Histórica", "Regional", "Social (gíria)", "Formal"], 
+                    correct: 2 
+                },
+                { 
+                    descriptor: "D8 - Tese e argumentos", 
+                    text: `Num texto que defende o uso de bicicletas, a afirmação "reduz o trânsito e não polui o ar" funciona como:`, 
+                    options: ["Uma tese.", "Um exemplo.", "Um argumento.", "Uma opinião contrária."], 
+                    correct: 2 
+                },
+                { 
+                    descriptor: "D1 - Localizar informação", 
+                    text: `No texto informativo sobre o Chocolate, a matéria-prima principal para sua produção é:`, 
+                    options: ["Açúcar", "Leite", "Cacau", "Manteiga"], 
+                    correct: 2 
+                },
+                {
+                    descriptor: "D7 - Identificar tese", 
+                    text: `Qual é a tese principal defendida no texto "A Pipa e a Flor"?`, 
+                    options: ["A liberdade é mais importante que o amor.", "O orgulho pode levar à solidão e à perda.", "A beleza das flores é passageira.", "Amizades verdadeiras superam qualquer distância."], 
+                    correct: 1 
+                },
+                { 
+                    descriptor: "D1 - O uso das tecnologias na escola", 
+                    text: `Segundo um texto que debate o uso de tecnologias na escola, a posição mais adequada seria:`, 
+                    options: ["Rejeitá-las completamente", "Adotá-las integralmente", "Utilizá-las de forma equilibrada", "Usá-las apenas para recreação"], 
+                    correct: 2 
+                },
+                { 
+                    descriptor: "D21 - Relação entre partes do texto", 
+                    text: `No trecho: "*Entretanto*, a mera presença de equipamentos tecnológicos não garante melhoria...", o conectivo "entretanto" estabelece uma relação de:`, 
+                    options: ["Adição", "Oposição", "Conclusão", "Explicação"], 
+                    correct: 1 
+                },
+                { 
+                    descriptor: "D2 - O uso das tecnologias na escola", 
+                    text: `No trecho: "A tecnologia deve ser encarada como uma ferramenta auxiliar, não como *protagonista*...", o termo "protagonista" significa:`, 
+                    options: ["Personagem principal", "Elemento inovador", "Recurso ultrapassado", "Componente secundário"], 
+                    correct: 0 
+                },
+            ];
+
+            function initGame() {
+                players[0].name = document.getElementById('player1-name').value || 'Jogador 1';
+                players[1].name = document.getElementById('player2-name').value || 'Jogador 2';
+                
+                players.forEach(p => p.position = 0);
+                currentPlayerIndex = 0;
+                isAnswering = false;
+                diceResult.textContent = '';
+                
+                nameModal.classList.add('hidden');
+                gameContainer.classList.remove('hidden');
+
+                createBoard();
+                players.forEach(updatePawnPosition);
+                updateGameStatus();
+            }
+            
+            function updateGameStatus() {
+                gameStatus.textContent = `Vez de ${players[currentPlayerIndex].name}`;
+            }
+
+            function createBoard() {
+                const pawnsContainer = document.getElementById('pawns-container');
+                gameBoard.innerHTML = ''; 
+                for (let i = 1; i <= TOTAL_SQUARES; i++) {
+                    const square = document.createElement('div');
+                    square.classList.add('board-square', 'h-16', 'md:h-20', 'border-2', 'border-gray-300', 'rounded-lg', 'flex', 'items-center', 'justify-center', 'font-bold', 'text-gray-700');
+                    if(i === 1) {
+                        square.classList.add('start-square');
+                        square.innerHTML = 'INÍCIO';
+                    } else if (i === TOTAL_SQUARES) {
+                        square.classList.add('end-square');
+                        square.innerHTML = 'FIM';
+                    } else {
+                         square.textContent = i;
+                         const colors = ['bg-blue-100', 'bg-green-100', 'bg-red-100', 'bg-yellow-100', 'bg-purple-100'];
+                         square.classList.add(colors[i % colors.length]);
+                    }
+                    square.dataset.square = i;
+                    gameBoard.appendChild(square);
+                }
+                gameBoard.appendChild(pawnsContainer);
+            }
+            
+            function updatePawnPosition(player) {
+                const squareIndex = player.position > 0 ? player.position - 1 : 0;
+                const targetSquare = gameBoard.children[squareIndex];
+                if (!targetSquare) return;
+
+                const boardRect = gameBoard.getBoundingClientRect();
+                const squareRect = targetSquare.getBoundingClientRect();
+                
+                let centerX = (squareRect.left - boardRect.left) + (squareRect.width / 2);
+                let centerY = (squareRect.top - boardRect.top) + (squareRect.height / 2);
+
+                if (players.length > 1) {
+                    if (player.id === 1) centerX -= squareRect.width * 0.15;
+                    else centerX += squareRect.width * 0.15;
+                }
+                
+                player.pawnElement.style.top = `${centerY}px`;
+                player.pawnElement.style.left = `${centerX}px`;
+            }
+
+
+            function rollDice() {
+                if (isAnswering) return;
+                diceButton.classList.add('dice-animation');
+                
+                setTimeout(() => {
+                    const roll = Math.floor(Math.random() * 6) + 1;
+                    diceResult.textContent = `Você tirou ${roll}`;
+                    diceButton.classList.remove('dice-animation');
+                    movePlayer(roll);
+                }, 500);
+            }
+            
+            function movePlayer(steps) {
+                const player = players[currentPlayerIndex];
+                player.position += steps;
+                player.position = Math.min(player.position, TOTAL_SQUARES);
+                
+                updatePawnPosition(player);
+                
+                if (player.position >= TOTAL_SQUARES) {
+                     setTimeout(() => showWinner(player), 700);
+                } else {
+                    setTimeout(askQuestion, 700);
+                }
+            }
+
+            function askQuestion() {
+                isAnswering = true;
+                const questionData = questions[Math.floor(Math.random() * questions.length)];
+
+                document.getElementById('question-descriptor').textContent = questionData.descriptor;
+                document.getElementById('question-text').textContent = questionData.text;
+
+                const optionsContainer = document.getElementById('options-container');
+                optionsContainer.innerHTML = '';
+
+                questionData.options.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    button.textContent = option;
+                    button.classList.add('p-3', 'bg-gray-200', 'rounded-lg', 'text-left', 'hover:bg-blue-500', 'hover:text-white', 'transition-colors');
+                    button.onclick = () => checkAnswer(index, questionData.correct);
+                    optionsContainer.appendChild(button);
+                });
+                
+                document.getElementById('feedback').innerHTML = '';
+                showModal(questionModal, modalContent);
+            }
+
+            function checkAnswer(selectedIndex, correctIndex) {
+                const options = document.getElementById('options-container').children;
+                const feedbackEl = document.getElementById('feedback');
+                
+                Array.from(options).forEach(btn => btn.disabled = true);
+                
+                if (selectedIndex === correctIndex) {
+                    options[selectedIndex].classList.add('bg-green-500', 'text-white');
+                    feedbackEl.textContent = "Resposta Correta!";
+                    feedbackEl.className = 'mt-4 text-center font-bold h-6 text-green-600';
+                } else {
+                    options[selectedIndex].classList.add('bg-red-500', 'text-white');
+                    options[correctIndex].classList.add('bg-green-500', 'text-white');
+                    feedbackEl.textContent = "Resposta Incorreta!";
+                    feedbackEl.className = 'mt-4 text-center font-bold h-6 text-red-600';
+
+                    const player = players[currentPlayerIndex];
+                    player.position = Math.max(0, player.position - 2);
+                    setTimeout(() => updatePawnPosition(player), 500);
+                }
+
+                setTimeout(() => {
+                    hideModal(questionModal, modalContent);
+                    switchPlayer();
+                }, 2000);
+            }
+
+            function switchPlayer() {
+                currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+                updateGameStatus();
+                isAnswering = false;
+                diceResult.textContent = '';
+            }
+            
+            function showWinner(player) {
+                document.getElementById('winner-message').textContent = `${player.name} venceu!`;
+                showModal(winnerModal, winnerContent);
+                launchConfetti();
+            }
+
+            function launchConfetti() {
+                confettiContainer.innerHTML = '';
+                for (let i = 0; i < 100; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.classList.add('confetti-piece');
+                    confetti.style.left = `${Math.random() * 100}vw`;
+                    confetti.style.animationDelay = `${Math.random() * 5}s`;
+                    confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                    confettiContainer.appendChild(confetti);
+                }
+            }
+
+            function startNewGame() {
+                hideModal(winnerModal, winnerContent);
+                confettiContainer.innerHTML = '';
+                gameContainer.classList.add('hidden');
+                nameModal.classList.remove('hidden');
+                document.getElementById('player1-name').value = '';
+                document.getElementById('player2-name').value = '';
+            }
+            
+            function showModal(modal, content) {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    content.classList.remove('scale-95', 'opacity-0');
+                    content.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            }
+            
+            function hideModal(modal, content) {
+                 content.classList.add('scale-95', 'opacity-0');
+                 setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+
+            startGameButton.addEventListener('click', initGame);
+            diceButton.addEventListener('click', rollDice);
+            resetButton.addEventListener('click', startNewGame);
+            playAgainButton.addEventListener('click', startNewGame);
+        });
+    </script>
+</body>
+</html>
+
